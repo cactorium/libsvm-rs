@@ -3,7 +3,7 @@ extern crate libc;
 #[repr(C)]
 pub struct SvmNode {
 	pub index: libc::c_int,
-	pub value: libc::c_float,
+	pub value: libc::c_double,
 }
 
 #[repr(C)]
@@ -91,7 +91,7 @@ pub fn svm_get_svr_probability(model: *const SvmModel) -> libc::c_double;
 
 pub fn svm_predict_values(model: *const SvmModel, x: *const SvmNode, dec_values: *mut libc::c_double) -> libc::c_double;
 pub fn svm_predict(model: *const SvmModel, x: *const SvmNode) -> libc::c_double;
-pub fn svm_predict_probability(model: *const SvmModel, x: *const SvmNode, prob_estimats: *mut libc::c_double) -> libc::c_double;
+pub fn svm_predict_probability(model: *const SvmModel, x: *const SvmNode, prob_estimates: *mut libc::c_double) -> libc::c_double;
 
 pub fn svm_free_model_content(model_ptr: *mut SvmModel);
 pub fn svm_free_and_destroy_model(model_ptr_ptr: *mut *mut SvmModel);
