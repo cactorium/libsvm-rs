@@ -1,5 +1,5 @@
 [package]
-name = "libsvm-sys"
+name = "libsvm_sys"
 version = "0.1.0"
 authors = ["Kelvin Ly <kelvin.ly1618@gmail.com>"]
 build = "build.rs"

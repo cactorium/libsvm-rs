@@ -1,3 +1,5 @@
+extern crate libsvm_sys;
+
 #[cfg(test)]
 mod tests {
     #[test]
