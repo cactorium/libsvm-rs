@@ -1,6 +1,7 @@
 extern crate libc;
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct SvmNode {
 	pub index: libc::c_int,
 	pub value: libc::c_double,
@@ -9,11 +10,11 @@ pub struct SvmNode {
 #[repr(C)]
 pub struct SvmProblem {
 	pub l: libc::c_int,
-	pub y: *mut libc::c_double,
-	pub x: *mut *mut SvmNode,
+	pub y: *const libc::c_double,
+	pub x: *const *const SvmNode,
 }
 
-/* sum_type */
+/* svm_type */
 pub const C_SVC: libc::c_int        = 0;
 pub const NU_SVC: libc::c_int       = 1;
 pub const ONE_CLASS: libc::c_int    = 2;
@@ -40,8 +41,8 @@ pub struct SvmParameter {
 	pub eps: libc::c_double,	/* stopping criteria */
 	pub c: libc::c_double,	/* for C_SVC, EPSILON_SVR and NU_SVR */
 	pub nr_weight: libc::c_int,		/* for C_SVC */
-	pub weight_label: *mut libc::c_int,	/* for C_SVC */
-	pub weight: *mut libc::c_double,		/* for C_SVC */
+	pub weight_label: *const libc::c_int,	/* for C_SVC */
+	pub weight: *const libc::c_double,		/* for C_SVC */
 	pub nu: libc::c_double,	/* for NU_SVC, ONE_CLASS, and NU_SVR */
 	pub p: libc::c_double,	/* for EPSILON_SVR */
 	pub shrinking: libc::c_int,         /* use the shrinking heuristics */
