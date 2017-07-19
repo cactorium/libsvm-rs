@@ -2,7 +2,7 @@ extern crate libsvm_sys;
 extern crate libc;
 
 use std::borrow::Borrow;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use std::ops::Deref;
 
@@ -145,10 +145,27 @@ pub enum ModelCreationError {
     ParameterCheckError(ParameterCheckError),
     UnableToLoadModel,
     UnableToTrainModel,
+    PathHasNulls(Vec<u8>),
+}
+
+impl From<std::ffi::NulError> for ModelCreationError {
+    fn from(e: std::ffi::NulError) -> ModelCreationError {
+        ModelCreationError::PathHasNulls(e.into_vec())
+    }
 }
 
 #[derive(Clone, Debug)]
-pub struct ModelSaveError;
+pub enum ModelSaveError {
+    SaveFailed,
+    PathHasNulls(Vec<u8>),
+}
+
+impl From<std::ffi::NulError> for ModelSaveError {
+    fn from(e: std::ffi::NulError) -> ModelSaveError {
+        ModelSaveError::PathHasNulls(e.into_vec())
+    }
+}
+
 
 impl <'a> Default for Parameters<'a> {
     fn default() -> Parameters<'a> {
@@ -358,7 +375,8 @@ impl <'a> Model<'a> {
     */
 
     // FIXME: make more type safe; should be using a Path instead of a &str
-    pub fn load_model(path: &CStr) -> Result<Model<'a>, ModelCreationError> {
+    pub fn load_model(path: &str) -> Result<Model<'a>, ModelCreationError> {
+        let path = CString::new(path)?;
         let model = unsafe {
             libsvm_sys::svm_load_model(path.as_ptr() as *const libc::c_char)
         };
@@ -373,7 +391,8 @@ impl <'a> Model<'a> {
         }
     }
 
-    pub fn save_model(&self, path: &CStr) -> Result<(), ModelSaveError> {
+    pub fn save_model(&self, path: &str) -> Result<(), ModelSaveError> {
+        let path = CString::new(path)?;
         let ret = unsafe {
             libsvm_sys::svm_save_model(
                 path.as_ptr() as *const libc::c_char,
@@ -381,7 +400,7 @@ impl <'a> Model<'a> {
         };
 
         if ret < 0 {
-            Err(ModelSaveError)
+            Err(ModelSaveError::SaveFailed)
         } else {
             Ok(())
         }
