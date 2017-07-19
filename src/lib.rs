@@ -278,7 +278,7 @@ impl <'a> Parameters<'a> {
 
     pub fn epsilon(self, eps: f64) -> Parameters<'a> {
         let mut ret = self;
-        ret.inner.epsilon = eps as libc::c_double;
+        ret.inner.eps = eps as libc::c_double;
         ret
     }
 
