@@ -2,10 +2,9 @@ extern crate libsvm_sys;
 extern crate libc;
 
 use std::borrow::Borrow;
-
-use std::ops::Deref;
-
+use std::ffi::CStr;
 use std::marker::PhantomData;
+use std::ops::Deref;
 
 /// The node type used inside libsvm
 pub type SvmNode = libsvm_sys::SvmNode;
@@ -359,7 +358,7 @@ impl <'a> Model<'a> {
     */
 
     // FIXME: make more type safe; should be using a Path instead of a &str
-    pub fn load_model(path: &str) -> Result<Model<'a>, ModelCreationError> {
+    pub fn load_model(path: &CStr) -> Result<Model<'a>, ModelCreationError> {
         let model = unsafe {
             libsvm_sys::svm_load_model(path.as_ptr() as *const libc::c_char)
         };
@@ -374,7 +373,7 @@ impl <'a> Model<'a> {
         }
     }
 
-    pub fn save_model(&self, path: &str) -> Result<(), ModelSaveError> {
+    pub fn save_model(&self, path: &CStr) -> Result<(), ModelSaveError> {
         let ret = unsafe {
             libsvm_sys::svm_save_model(
                 path.as_ptr() as *const libc::c_char,
