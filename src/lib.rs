@@ -276,6 +276,12 @@ impl <'a> Parameters<'a> {
         ret
     }
 
+    pub fn epsilon(self, eps: f64) -> Parameters<'a> {
+        let mut ret = self;
+        ret.inner.epsilon = eps as libc::c_double;
+        ret
+    }
+
     pub fn use_shrinking(self, b: bool) -> Parameters<'a> {
         let mut ret = self;
         ret.inner.shrinking = if b { 1 } else { 0 };
