@@ -120,18 +120,25 @@ pub struct Parameters<'a> {
 }
 
 #[derive(Clone, Debug)]
-pub enum ParameterCheckError {
-    UnknownSvmType,
-    UnknownKernelType,
-    GammaNonpositive,
-    KernelDegreeNonpositive,
-    CacheSizeNonpositive,
-    InvalidNu,
-    PNonpositive,
-    InvalidShrinking,
-    InvalidProbability,
-    Unsupported,
-    InfeasibleNu,
+pub struct ParameterCheckError {
+    pub msg: &'static str,
+}
+
+impl ParameterCheckError {
+    // NOTE: very likely to break because it relies on random strings
+    // in libsvm
+    pub fn from_ptr(ptr: *const libc::c_char) -> Option<ParameterCheckError> {
+        use std::ffi::CStr;
+        if ptr.is_null() {
+            None
+        } else {
+            let err_str = unsafe { CStr::from_ptr(ptr) }.to_str();
+            match err_str {
+                Ok(s) => Some(ParameterCheckError { msg: s }),
+                Err(_) => None,
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -315,7 +322,9 @@ impl <'a> Model<'a> {
         };
         // check result
         if parameter_error != std::ptr::null() {
-            // TODO
+            return Err(
+                ModelCreationError::ParameterCheckError(
+                    ParameterCheckError::from_ptr(parameter_error).unwrap()));
         }
         // train the SVM model
         let svm_model = unsafe {
@@ -431,16 +440,44 @@ mod tests {
     use super::*;
     #[test]
     fn it_works() {
-        let testx = vec![
+        let test0 = vec![
             ([0.0, 0.0f64], -1),
             ([0.0, 1.0], -1),
             ([1.0, 0.0], 1),
             ([1.0, 1.0], 1),
         ];
+        let test1 = vec![
+            ([0.0, 1.0, 0.0f64], 0),
+            ([0.0, 1.0, 1.0], 0),
+            ([1.0, 0.0, 0.0], 1),
+            ([1.0, 0.0, 1.0], 1),
+        ];
+
         let parameters = Parameters::new()
             .c_svc(1.0, &[], &[]);
-        let model = Model::train(&testx, &parameters).unwrap();
-        let prediction = model.predict(&[0.0, -1.0]);
-        assert_eq!(prediction, -1.0);
+        {
+            let model = Model::train(&test0, &parameters).unwrap();
+            {
+                let prediction = model.predict(&[0.0, -1.0]);
+                assert_eq!(prediction, -1.0);
+            }
+            {
+                let prediction = model.predict(&[0.7, -0.4]);
+                assert_eq!(prediction, 1.0);
+            }
+        }
+        {
+            let model = Model::train(&test1, &parameters).unwrap();
+            {
+                let prediction = model.predict(&[0.0, 1.0, 0.2]);
+                assert_eq!(prediction, 0.0);
+            }
+            {
+                let prediction = model.predict(&[1.0, 0.0, -0.3]);
+                assert_eq!(prediction, 1.0);
+            }
+        }
+
     }
+    // TODO: add more tests
 }
