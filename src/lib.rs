@@ -208,10 +208,12 @@ impl <'a> Parameters<'a> {
         ret
     }
 
+    /*
     pub fn precomputed(self) -> Parameters<'a> {
         // TODO: figure out a way to nicely wrap precomputed kernel semantics
         unimplemented!()
     }
+    */
 
     pub fn c_svc<'b>(self,
                      c: f64,
@@ -332,14 +334,16 @@ impl <'a> Model<'a> {
         }
     }
 
+    /*
     pub fn train_sparse<'b, C>(data: &[(&'a SparseVector, C)], parameters: &Parameters<'b>) -> Result<Model<'a>, ModelCreationError> where
         C: Copy + Into<u32>
     {
         // TODO: allow for zero copy training
         unimplemented!()
     }
+    */
 
-    // TODO: make more type safe; should be using a Path instead of a &str
+    // FIXME: make more type safe; should be using a Path instead of a &str
     pub fn load_model(path: &str) -> Result<Model<'a>, ModelCreationError> {
         let model = unsafe {
             libsvm_sys::svm_load_model(path.as_ptr() as *const libc::c_char)
@@ -403,7 +407,12 @@ impl <'a> Model<'a> {
     }
 
     pub fn predict_sparse(&self, data: &SparseVector) -> libc::c_double {
-        unimplemented!()
+        unsafe {
+            libsvm_sys::svm_predict(
+                self.inner as *const libsvm_sys::SvmModel,
+                data.as_ptr()
+            )
+        }
     }
 }
 
