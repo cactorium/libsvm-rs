@@ -1,9 +1,10 @@
 extern crate libsvm_sys;
 extern crate libc;
 
+use std::borrow::Borrow;
+
 use std::ops::Deref;
 
-use std::path::Path;
 use std::marker::PhantomData;
 
 /// The node type used inside libsvm
@@ -23,10 +24,21 @@ impl <'a> From<&'a [f64]> for SparseVector {
                 index: idx as libc::c_int,
                 value: *x as libc::c_double,
             })
+            .chain(Some(SvmNode {
+                index: -1 as libc::c_int,
+                value: 0.0,
+            }))
             .collect();
         SparseVector {
             inner: vec,
         }
+    }
+}
+
+impl Deref for SparseVector {
+    type Target = Vec<SvmNode>;
+    fn deref(&self) -> &Vec<SvmNode> {
+        &self.inner
     }
 }
 
@@ -192,6 +204,7 @@ impl <'a> Parameters<'a> {
         let mut ret = self;
         ret.inner.kernel_type = KernelType::Sigmoid as libc::c_int;
         ret.inner.gamma = gamma as libc::c_double;
+        ret.inner.coef0 = coef as libc::c_double;
         ret
     }
 
@@ -268,12 +281,12 @@ impl <'a> Parameters<'a> {
 }
 
 impl <'a> Model<'a> {
-    pub fn train<'b, 'c, T, C>(data: &[(&T, C)], parameters: &Parameters<'b>) -> Result<Model<'a>, ModelCreationError> where
-        T: AsRef<&'c [f64]>, C: Copy + Into<libc::c_double>
+    pub fn train<'b, T, C>(data: &[(T, C)], parameters: &Parameters<'b>) -> Result<Model<'a>, ModelCreationError> where
+        T: Borrow<[f64]>, C: Copy + Into<libc::c_double>
     {
         // copy the data into a vector of sparse vectors
         let sparse: Vec<SparseVector> = data.iter()
-            .map(|&(x, _)| SparseVector::from(*x.as_ref()))
+            .map(|&(ref x, _)| SparseVector::from(x.borrow()))
             .collect();
         let classes = data.iter()
             .map(|&(_, y)| y.into())
@@ -384,7 +397,7 @@ impl <'a> Model<'a> {
         unsafe {
             libsvm_sys::svm_predict(
                 self.inner as *const libsvm_sys::SvmModel,
-                sparse.inner.as_ptr()
+                sparse.as_ptr()
             )
         }
     }
@@ -406,7 +419,19 @@ impl <'a> Drop for Model<'a> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn it_works() {
+        let testx = vec![
+            ([0.0, 0.0f64], -1),
+            ([0.0, 1.0], -1),
+            ([1.0, 0.0], 1),
+            ([1.0, 1.0], 1),
+        ];
+        let parameters = Parameters::new()
+            .c_svc(1.0, &[], &[]);
+        let model = Model::train(&testx, &parameters).unwrap();
+        let prediction = model.predict(&[0.0, -1.0]);
+        assert_eq!(prediction, -1.0);
     }
 }
