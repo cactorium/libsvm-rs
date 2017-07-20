@@ -2,7 +2,7 @@ extern crate libsvm_sys;
 extern crate libc;
 
 use std::borrow::Borrow;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 use std::marker::PhantomData;
 use std::ops::Deref;
 
@@ -310,6 +310,9 @@ impl <'a> Parameters<'a> {
         ret
     }
 }
+
+unsafe impl <'a> Send for Model<'a> { }
+unsafe impl <'a> Sync for Model<'a> { }
 
 impl <'a> Model<'a> {
     pub fn train<'b, T, C>(data: &[(T, C)], parameters: &Parameters<'b>) -> Result<Model<'a>, ModelCreationError> where
