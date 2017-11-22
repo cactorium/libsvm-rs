@@ -461,6 +461,15 @@ impl <'a> Drop for Model<'a> {
     }
 }
 
+pub fn disable_logging() {
+    extern fn dummy_fn(_: *const libc::c_char) {
+    }
+
+    unsafe {
+        libsvm_sys::svm_set_print_string_function(dummy_fn);
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
